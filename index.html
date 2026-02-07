@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机NFC读写工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            /* 默认隐藏 */
+        }
+
+        #statusMessage {
+            margin: 0;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .control-panel,
+        .read-panel,
+        .write-panel {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: calc(50% - 10px);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #stopReadBtn {
+            background-color: #dc3545;
+        }
+
+        #stopReadBtn:hover {
+            background-color: #c82333;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        #readResult {
+            background-color: #f8f9fa;
+            white-space: pre-wrap;
+            /* 保留换行 */
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 20px;
+        }
+
+        /* 新增：解析结果样式 */
+        .parse-result {
+            margin-top: 15px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+
+        .parse-result h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: #f2f2f2;
+            width: 30%;
+        }
+
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .color-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .raw-data {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .raw-data-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📱 手机NFC读写工具</h1>
+
+        <div class="warning">
+            <strong>重要提示：</strong>
+            <ul>
+                <li>本工具仅能在 <strong>Android 版 Chrome 浏览器</strong> 中使用。</li>
+                <li>请确保手机NFC功能已打开。</li>
+                <li>将NTAG213等标签贴近手机背面NFC感应区。</li>
+                <li>网页需要通过 <strong>HTTPS</strong> 访问（本地localhost除外）。</li>
+                <li><strong>iPhone (iOS) 系统不支持此功能。</strong></li>
+            </ul>
+        </div>
+
+        <!-- 状态信息显示区域 -->
+        <div id="statusBox" class="status">
+            <p id="statusMessage"></p>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <h2>第一步：检查与授权</h2>
+            <button id="checkNFCBtn">检查NFC支持与权限</button>
+            <p id="supportInfo">点击按钮检查浏览器是否支持Web NFC。</p>
+        </div>
+
+        <!-- 读取面板 -->
+        <div class="read-panel">
+            <h2>第二步：读取标签数据</h2>
+            <p>点击"开始读取"后将标签贴近手机。</p>
+            <button id="startReadBtn" disabled>开始读取</button>
+            <button id="stopReadBtn" disabled>停止读取</button>
+
+            <h3>读取结果：</h3>
+            <div id="readResult" class="raw-data" placeholder="读取到的数据将显示在这里..."></div>
+
+            <!-- 解析结果区域 -->
+            <div id="parseResult" class="parse-result" style="display: none;">
+                <h4>📊 数据解析结果</h4>
+                <table id="dataTable" class="data-table">
+                    <!-- 表格内容将通过JavaScript动态生成 -->
+                </table>
+                <div class="raw-data-title">原始数据：</div>
+                <div id="rawDataText" class="raw-data"></div>
+            </div>
+        </div>
+
+        <!-- 写入面板 -->
+        <div class="write-panel">
+            <h2>第三步：写入数据到标签</h2>
+            <p>输入你想要写入标签的文本（例如URL或普通文本）：</p>
+            <textarea id="dataToWrite" placeholder="请输入要写入的内容，例如：https://example.com 或 你好，NFC！"></textarea>
+            <button id="writeBtn" disabled>写入数据</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素引用
+        const checkNFCBtn = document.getElementById('checkNFCBtn');
+        const startReadBtn = document.getElementById('startReadBtn');
+        const stopReadBtn = document.getElementById('stopReadBtn');
+        const writeBtn = document.getElementById('writeBtn');
+        const supportInfo = document.getElementById('supportInfo');
+        const statusBox = document.getElementById('statusBox');
+        const statusMessage = document.getElementById('statusMessage');
+        const readResult = document.getElementById('readResult');
+        const dataToWrite = document.getElementById('dataToWrite');
+        const parseResult = document.getElementById('parseResult');
+        const dataTable = document.getElementById('dataTable');
+        const rawDataText = document.getElementById('rawDataText');
+
+        // 全局变量，用于控制读取过程
+        let isReading = false;
+        let abortController = null; // 用于停止读取
+
+        // 更新状态信息函数
+        function updateStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusBox.className = 'status ' + type; // 设置样式类
+            statusBox.style.display = 'block';
+            console.log(type.toUpperCase() + ': ' + message);
+        }
+
+        // 解析数据函数
+        function parseData(text) {
+            // 清空之前的解析结果
+            parseResult.style.display = 'none';
+            dataTable.innerHTML = '';
+            rawDataText.textContent = '';
+
+            // 检查是否符合解析条件：以"en;"开头，以";"结尾
+            if (text.startsWith('en;') && text.endsWith(';')) {
+                console.log('符合解析条件，开始解析数据');
+
+                // 显示解析结果区域
+                parseResult.style.display = 'block';
+
+                // 保存原始数据
+                rawDataText.textContent = text;
+
+                // 分割数据
+                const parts = text.split(';');
+
+                // 移除第一个(en)和最后一个(空)元素
+                const dataParts = parts.slice(1, -1);
+
+                // 定义字段名称
+                const fieldNames = [
+                    '厂商',
+                    '耗材类型',
+                    '子耗材',
+                    '颜色',
+                    '透明度',
+                    '最低温度',
+                    '最高温度',
+                    '热床温度',
+                    '直径(mm)',
+                    '重量(g)',
+                    '生产日期'
+                ];
+
+                // 构建表格
+                let tableHTML = '';
+
+                for (let i = 0; i < fieldNames.length && i < dataParts.length; i++) {
+                    const fieldName = fieldNames[i];
+                    let fieldValue = dataParts[i];
+
+                    // 特殊处理某些字段
+                    if (fieldName === '子耗材' && fieldValue.trim() === '') {
+                        fieldValue = '无';
+                    }
+
+                    if (fieldName === '颜色') {
+                        // 处理颜色，显示色块
+                        const colorValue = fieldValue;
+                        let displayValue = fieldValue;
+                        let colorBlock = '';
+
+                        if (/^[0-9A-Fa-f]{6}$/.test(fieldValue)) {
+                            // 如果是6位十六进制颜色代码
+                            displayValue = '#' + fieldValue.toUpperCase();
+                            colorBlock = `<span class="color-preview" style="background-color: #${fieldValue};"></span>`;
+                        }
+
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${colorBlock}${displayValue}</td>
+                            </tr>
+                        `;
+                    } else if (fieldName === '透明度') {
+                        // 处理透明度
+                        let opacityText = fieldValue;
+                        if (/^[0-9A-Fa-f]{2}$/.test(fieldValue)) {
+                            const opacityDecimal = parseInt(fieldValue, 16);
+                            opacityText = `${fieldValue} (${opacityDecimal}%)`;
+                        }
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${opacityText}</td>
+                            </tr>
+                        `;
+                    } else if (fieldName === '生产日期') {
+                        // 处理生产日期 2602 -> 2026年02月
+                        let dateText = fieldValue;
+                        if (/^\d{4}$/.test(fieldValue)) {
+                            const year = '20' + fieldValue.substring(0, 2);
+                            const month = fieldValue.substring(2);
+                            dateText = `${year}年${month}月`;
+                        }
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${dateText}</td>
+                            </tr>
+                        `;
+                    } else if (fieldName === '最低温度' || fieldName === '最高温度' || fieldName === '热床温度') {
+                        // 温度字段添加单位
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${fieldValue}°C</td>
+                            </tr>
+                        `;
+                    } else {
+                        // 普通字段
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${fieldValue}</td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                dataTable.innerHTML = tableHTML;
+
+                return {
+                    success: true,
+                    fields: dataParts,
+                    fieldNames: fieldNames
+                };
+            } else {
+                console.log('不符合解析条件，显示原始文本');
+                return {
+                    success: false,
+                    message: '数据格式不符合解析条件'
+                };
+            }
+        }
+
+        // 1. 检查NFC支持与权限 (安全初始化版)
+        checkNFCBtn.addEventListener('click', async function () {
+            readResult.textContent = '';
+            let detailedLog = '=== Web NFC 环境诊断报告 ===\n\n';
+            updateStatus('正在检测NFC支持...', 'info');
+
+            // 第一步：安全地探测全局对象中可能存在的NFC相关API
+            detailedLog += '1. 探测全局NFC对象...\n';
+            const globalObjectsToCheck = [
+                'navigator.nfc',
+                'window.NDEFReader',
+                'navigator.ndef',
+                'window.nfc',
+                'NDEFReader' // 直接检查构造函数
+            ];
+
+            let foundApiPath = null;
+            let foundApiObject = null;
+
+            for (const objPath of globalObjectsToCheck) {
+                try {
+                    // 使用eval安全地访问可能的多级属性 (仅用于诊断)
+                    const value = eval(objPath);
+                    if (value) {
+                        foundApiPath = objPath;
+                        foundApiObject = value;
+                        detailedLog += `   ✅ 发现: ${objPath}\n`;
+                        break; // 找到第一个就停止
+                    }
+                } catch (e) {
+                    // 忽略访问错误
+                }
+            }
+
+            if (!foundApiPath) {
+                detailedLog += '   ❌ 未在全局对象中找到NFC API。\n';
+                detailedLog += '\n2. 建议：\n';
+                detailedLog += '   a) 确保使用Android Chrome/Edge最新版\n';
+                detailedLog += '   b) 在chrome://flags中搜索并启用"WebNFC"\n';
+                detailedLog += '   c) 您之前在webnfc.org能用的原因可能是该网站使用了polyfill或不同的API调用方式\n';
+                updateStatus('❌ 未找到NFC API对象', 'error');
+                readResult.textContent = detailedLog;
+                return;
+            }
+
+            detailedLog += `\n2. 使用找到的API路径: ${foundApiPath}\n`;
+
+            // 第二步：根据找到的API路径，采用不同的调用策略
+            detailedLog += '\n3. 尝试初始化与请求权限...\n';
+            updateStatus('正在初始化NFC并请求权限...', 'info');
+
+            try {
+                let ndefReader;
+
+                // 策略A：如果找到的是 NDEFReader 构造函数
+                if (foundApiPath === 'window.NDEFReader' || foundApiPath === 'NDEFReader') {
+                    ndefReader = new NDEFReader();
+                    detailedLog += '   方式: 使用 new NDEFReader()\n';
+                }
+                // 策略B：如果找到的是 navigator.nfc 对象
+                else if (foundApiPath === 'navigator.nfc') {
+                    // 注意：根据Web NFC标准，navigator.nfc 下没有直接的scan方法
+                    // 它应该通过 NDEFReader 使用，但某些实现可能不同
+                    detailedLog += '   方式: 尝试通过 navigator.nfc 访问\n';
+
+                    // 先尝试标准方式
+                    if (window.NDEFReader) {
+                        ndefReader = new NDEFReader();
+                        detailedLog += '   -> 回退到标准 NDEFReader\n';
+                    } else {
+                        // 如果浏览器非标准，尝试直接调用
+                        throw new Error('非标准navigator.nfc实现，需要特定调用方式');
+                    }
+                }
+                // 策略C：其他发现的对象
+                else {
+                    detailedLog += `   方式: 尝试直接使用 ${foundApiPath}\n`;
+                    // 对于不确定的对象，尝试通用的scan调用
+                    if (typeof foundApiObject.scan === 'function') {
+                        // 如果对象本身有scan方法，直接使用
+                        await foundApiObject.scan();
+                        detailedLog += '   ✅ 权限请求已发送（非标准API）\n';
+
+                        // 如果成功，我们假设权限已获得
+                        updateStatus('✅ 非标准API就绪，请尝试读写操作', 'info');
+                        startReadBtn.disabled = false;
+                        writeBtn.disabled = false;
+                        checkNFCBtn.disabled = true;
+                        checkNFCBtn.textContent = 'API就绪';
+                        readResult.textContent = detailedLog;
+                        return;
+                    } else {
+                        throw new Error(`找到的对象 ${foundApiPath} 没有 .scan() 方法`);
+                    }
+                }
+
+                // 对于标准的 NDEFReader 实例，进行扫描
+                if (ndefReader && typeof ndefReader.scan === 'function') {
+                    // 设置一个超时，防止权限请求卡住
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('权限请求超时(10秒)')), 10000);
+                    });
+
+                    await Promise.race([
+                        ndefReader.scan(),
+                        timeoutPromise
+                    ]);
+
+                    detailedLog += '   ✅ NDEFReader.scan() 调用成功\n';
+                    detailedLog += '   ✅ NFC权限应已获得\n\n';
+                    detailedLog += '✨ 初始化成功！现在可以：\n';
+                    detailedLog += '   • 点击"开始读取"读取标签\n';
+                    detailedLog += '   • 输入文本后点击"写入数据"写入标签\n';
+
+                    // 保存reader实例供后续使用（如果需要）
+                    window._ndefReader = ndefReader;
+
+                    updateStatus('✅ NFC功能已就绪！', 'success');
+                    startReadBtn.disabled = false;
+                    writeBtn.disabled = false;
+                    checkNFCBtn.disabled = true;
+                    checkNFCBtn.textContent = '已就绪';
+                    supportInfo.innerHTML = '<strong>✅ Web NFC 初始化成功</strong>';
+
+                } else {
+                    throw new Error('NDEFReader实例或.scan()方法不可用');
+                }
+
+                readResult.textContent = detailedLog;
+
+            } catch (error) {
+                detailedLog += `   ❌ 初始化失败:\n`;
+                detailedLog += `      错误: ${error.name}\n`;
+                detailedLog += `      信息: ${error.message}\n\n`;
+
+                if (error.name === 'NotAllowedError') {
+                    detailedLog += '   💡 您拒绝了权限请求。请刷新页面重试。\n';
+                    updateStatus('❌ 权限被拒绝', 'error');
+                } else if (error.name === 'NotSupportedError') {
+                    detailedLog += '   💡 您的设备不支持NDEF标签扫描。\n';
+                    updateStatus('❌ 设备不支持', 'error');
+                } else if (error.message.includes('超时')) {
+                    detailedLog += '   💡 权限请求超时。可能是：\n';
+                    detailedLog += '       1. 权限弹窗被其他界面遮挡\n';
+                    detailedLog += '       2. 浏览器未正确触发权限请求\n';
+                    detailedLog += '       3. 尝试重启浏览器\n';
+                    updateStatus('⏱️ 请求超时', 'info');
+                } else {
+                    detailedLog += '   💡 可能的原因：\n';
+                    detailedLog += '       1. API调用方式不匹配您的浏览器\n';
+                    detailedLog += '       2. 尝试在chrome://flags启用"Experimental Web Platform features"\n';
+
+                    // 特殊建议：如果其他网站能用，尝试直接调用他们的方式
+                    detailedLog += '\n   🔍 由于您在webnfc.org可用，请尝试：\n';
+                    detailedLog += '       打开浏览器开发者工具(F12)→控制台(Console)\n';
+                    detailedLog += '       输入: NDEFReader 并回车，查看是否定义\n';
+                    detailedLog += '       输入: navigator.nfc 并回车，查看是否定义\n';
+
+                    updateStatus('⚠️ 初始化错误，请查看详情', 'error');
+                }
+
+                readResult.textContent = detailedLog;
+            }
+        });
+
+        // 2. 开始读取标签 (重构版 - 更贴近规范实现)
+        startReadBtn.addEventListener('click', async () => {
+            isReading = true;
+            startReadBtn.disabled = true;
+            stopReadBtn.disabled = false;
+            readResult.innerHTML = '请将NFC标签贴近手机背面...<br>(确保标签在NFC感应区内停留片刻)';
+            parseResult.style.display = 'none'; // 隐藏之前的解析结果
+            updateStatus('正在启动扫描，请靠近标签...', 'info');
+
+            abortController = new AbortController();
+
+            try {
+                // 使用更标准的 NDEFReader 调用方式
+                const ndefReader = new NDEFReader();
+
+                // 方案A: 使用更明确的 promise 和 event listener 组合
+                // 这是许多能工作的站点采用的模式
+                console.log('开始扫描...');
+
+                // 先添加读取事件监听器
+                ndefReader.addEventListener('reading', ({ message, serialNumber }) => {
+                    console.log('✅ 检测到 reading 事件！');
+                    updateStatus('✅ 检测到标签！', 'success');
+
+                    // 构建显示结果
+                    let resultText = `=== NFC标签读取成功 ===\n`;
+                    resultText += `时间: ${new Date().toLocaleTimeString()}\n`;
+                    resultText += `序列号: ${serialNumber || '未提供'}\n`;
+                    resultText += `记录数: ${message.records.length}\n\n`;
+
+                    const textDecoder = new TextDecoder();
+                    message.records.forEach((record, index) => {
+                        resultText += `[记录 #${index + 1}]\n`;
+                        resultText += `  类型: ${record.recordType}\n`;
+
+                        try {
+                            if (record.recordType === 'text') {
+                                const text = textDecoder.decode(record.data);
+                                resultText += `  内容: ${text}\n`;
+
+                                // 尝试解析数据
+                                const parseResult = parseData(text);
+                                if (!parseResult.success) {
+                                    resultText += `  说明: 格式不符合解析条件\n`;
+                                }
+
+                                if (record.lang) resultText += `  语言: ${record.lang}\n`;
+                            } else if (record.recordType === 'url') {
+                                const url = textDecoder.decode(record.data);
+                                resultText += `  URL: ${url}\n`;
+                            } else if (record.recordType === 'mime' && record.mediaType) {
+                                resultText += `  MIME类型: ${record.mediaType}\n`;
+                                resultText += `  数据大小: ${record.data.byteLength} 字节\n`;
+                            } else {
+                                resultText += `  数据: ${textDecoder.decode(record.data)}\n`;
+                            }
+                        } catch (e) {
+                            resultText += `  数据解码失败\n`;
+                        }
+                        resultText += '\n';
+                    });
+
+                    readResult.textContent = resultText;
+
+                    // 单次读取后自动停止
+                    if (abortController) {
+                        abortController.abort();
+                        isReading = false;
+                        startReadBtn.disabled = false;
+                        stopReadBtn.disabled = true;
+                        updateStatus('读取完成，可再次读取。', 'success');
+                    }
+                });
+
+                // 添加错误事件监听器
+                ndefReader.addEventListener('readingerror', () => {
+                    console.log('❌ 读取过程中发生错误');
+                    updateStatus('标签读取失败，请重试。', 'error');
+                    readResult.innerHTML += '\n\n❌ 读取失败，请确保标签类型正确且可读。';
+                });
+
+                // 最后启动扫描，传入终止信号
+                await ndefReader.scan({ signal: abortController.signal });
+
+                updateStatus('✅ 扫描已启动，请靠近标签...', 'info');
+                readResult.innerHTML += '\n\n✅ 扫描器已激活，等待标签...';
+
+                // 设置超时，防止无限等待
+                setTimeout(() => {
+                    if (isReading) {
+                        updateStatus('⚠️ 未检测到标签，请确保标签在感应区内', 'info');
+                        readResult.innerHTML += '<br><br>⏱️ 等待超时，未检测到标签。<br>可能原因：<br>1. 标签未贴近感应区<br>2. 标签类型不受支持<br>3. 标签已损坏或无数据';
+                    }
+                }, 15000); // 15秒后提示
+
+            } catch (error) {
+                console.error('扫描启动失败:', error);
+
+                if (error.name === 'AbortError') {
+                    updateStatus('读取已停止。', 'info');
+                } else if (error.name === 'NotAllowedError') {
+                    updateStatus('❌ 无NFC权限，请先授权。', 'error');
+                    readResult.textContent = '错误: NFC权限未获得。\n请先点击"检查NFC支持与权限"按钮完成授权。';
+                } else if (error.name === 'NotSupportedError') {
+                    updateStatus('❌ 设备不支持NDEF扫描。', 'error');
+                    readResult.textContent = `错误: ${error.message}\n\n您的设备可能不支持此类型的NFC标签读写。`;
+                } else {
+                    updateStatus(`❌ 扫描失败: ${error.message}`, 'error');
+                    readResult.textContent = `错误详情:\n名称: ${error.name}\n信息: ${error.message}\n\n请检查控制台获取更多信息。`;
+                }
+
+                isReading = false;
+                startReadBtn.disabled = false;
+                stopReadBtn.disabled = true;
+            }
+        });
+
+        // 3. 停止读取标签
+        stopReadBtn.addEventListener('click', () => {
+            if (abortController) {
+                abortController.abort();
+            }
+            isReading = false;
+            startReadBtn.disabled = false;
+            stopReadBtn.disabled = true;
+            updateStatus('读取已手动停止。', 'info');
+        });
+
+        // 4. 写入数据到标签
+        writeBtn.addEventListener('click', async () => {
+            const textToWrite = dataToWrite.value.trim();
+            if (!textToWrite) {
+                updateStatus('❌ 请输入要写入的内容。', 'error');
+                return;
+            }
+
+            updateStatus('请将要写入的标签贴近手机背面...', 'info');
+
+            // 判断输入内容是否为URL（简单判断）
+            let record;
+            const urlPattern = /^https?:\/\/.+/i;
+            if (urlPattern.test(textToWrite)) {
+                // 创建URL记录
+                record = {
+                    recordType: "url",
+                    data: textToWrite
+                };
+            } else {
+                // 创建文本记录，默认语言为中文（'zh'）
+                record = {
+                    recordType: "text",
+                    data: textToWrite,
+                    lang: "zh"
+                };
+            }
+
+            try {
+                // 调用写入API
+                const ndefWriter = new NDEFReader();
+                await ndefWriter.write({ records: [record] });
+                updateStatus(`✅ 数据写入成功！`, 'success');
+                // 写入成功后，清空输入框
+                dataToWrite.value = '';
+            } catch (error) {
+                updateStatus(`❌ 写入失败: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>
