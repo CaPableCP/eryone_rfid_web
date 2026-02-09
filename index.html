@@ -331,8 +331,7 @@
             <ul>
                 <li>本工具仅能在 <strong>Android 版 Chrome 浏览器</strong> 中使用。</li>
                 <li>请确保手机NFC功能已打开。</li>
-                <li>将NTAG213等标签贴近手机背面NFC感应区。</li>
-                <li>网页需要通过 <strong>HTTPS</strong> 访问（本地localhost除外）。</li>
+                <li>将标签贴近手机NFC感应区。</li>
                 <li><strong>iPhone (iOS) 系统不支持此功能。</strong></li>
             </ul>
         </div>
@@ -390,7 +389,7 @@
                 <!-- 第二行 -->
                 <div class="form-group">
                     <label for="subMaterial">子耗材 (4字以内，可为空):</label>
-                    <input type="text" id="subMaterial" maxlength="4" placeholder="例如: 高韧">
+                    <input type="text" id="subMaterial" maxlength="4" placeholder="例如: CF">
                 </div>
 
                 <div class="form-group">
@@ -450,7 +449,6 @@
                 <h4>生成的耗材数据格式:</h4>
                 <div id="generatedFormat" class="raw-data">;ERYONE;PLA; ;000000;FF;190;230;60;175;1000;2602;</div>
                 <p>格式说明: ;厂商;耗材类型;子耗材;颜色;透明度;最低温度;最高温度;热床温度;直径;重量;生产日期;</p>
-                <p>注意: 子耗材为空时使用4个空格，颜色为6位十六进制(无#)，透明度为2位十六进制(FF=100%)，直径为实际值×100(1.75→175)</p>
             </div>
 
             <button id="writeBtn" disabled>生成并写入</button>
