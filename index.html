@@ -39,6 +39,8 @@
             text-align: center;
             display: none;
             /* 默认隐藏 */
+            white-space: pre-line;
+            /* 允许换行 */
         }
 
         #statusMessage {
@@ -220,7 +222,8 @@
         }
 
         .form-group input[type="text"],
-        .form-group input[type="number"] {
+        .form-group input[type="number"],
+        .form-group select {
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #ccc;
@@ -229,7 +232,8 @@
         }
 
         .form-group input[type="text"]:focus,
-        .form-group input[type="number"]:focus {
+        .form-group input[type="number"]:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #007bff;
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
@@ -299,6 +303,69 @@
             flex: 1;
         }
 
+        /* 自定义输入框样式 */
+        .custom-input-container {
+            margin-top: 5px;
+            display: none;
+        }
+
+        .custom-input-container.show {
+            display: block;
+        }
+
+        /* 成功提示弹窗 */
+        .success-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px 20px;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .success-popup.fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .success-popup h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #155724;
+        }
+
+        .success-popup p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
         /* 响应式调整 */
         @media (max-width: 600px) {
             .material-form {
@@ -317,6 +384,12 @@
             button {
                 width: 100%;
                 margin: 5px 0;
+            }
+
+            .success-popup {
+                left: 20px;
+                right: 20px;
+                max-width: none;
             }
         }
     </style>
@@ -377,19 +450,52 @@
             <div class="material-form">
                 <!-- 第一行 -->
                 <div class="form-group">
-                    <label for="manufacturer">厂商信息 (10字以内):</label>
-                    <input type="text" id="manufacturer" maxlength="10" placeholder="例如: ERYONE">
+                    <label for="manufacturerSelect">厂商信息:</label>
+                    <select id="manufacturerSelect">
+                        <option value="ERYONE" selected>艾瑞旺 (ERYONE)</option>
+                        <option value="OTHER">其他</option>
+                    </select>
+                    <div id="manufacturerCustomContainer" class="custom-input-container">
+                        <input type="text" id="manufacturerCustom" maxlength="10" placeholder="请输入其他厂商信息">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="materialType">耗材类型 (4字以内):</label>
-                    <input type="text" id="materialType" maxlength="4" placeholder="例如: PLA">
+                    <label for="materialTypeSelect">耗材类型:</label>
+                    <select id="materialTypeSelect">
+                        <option value="PLA">PLA</option>
+                        <option value="ABS">ABS</option>
+                        <option value="PETG">PETG</option>
+                        <option value="TPU">TPU</option>
+                        <option value="PA">尼龙 (PA)</option>
+                        <option value="PC">PC</option>
+                        <option value="ASA">ASA</option>
+                        <option value="PP">PP</option>
+                        <option value="PPA">PPA</option>
+                        <option value="PPS">PPS</option>
+                        <option value="PVA">PVA</option>
+                        <option value="PVB">PVB</option>
+                        <option value="OTHER">其他</option>
+                    </select>
+                    <div id="materialTypeCustomContainer" class="custom-input-container">
+                        <input type="text" id="materialTypeCustom" maxlength="4" placeholder="请输入其他耗材类型(4字以内)">
+                    </div>
                 </div>
 
                 <!-- 第二行 -->
                 <div class="form-group">
-                    <label for="subMaterial">子耗材 (4字以内，可为空):</label>
-                    <input type="text" id="subMaterial" maxlength="4" placeholder="例如: CF">
+                    <label for="subMaterialSelect">子耗材:</label>
+                    <select id="subMaterialSelect">
+                        <option value="    ">无</option>
+                        <option value="CF">碳纤维 (CF)</option>
+                        <option value="GF">玻璃纤维 (GF)</option>
+                        <option value="HS">高速 (HS)</option>
+                        <option value="Lite">Lite</option>
+                        <option value="OTHER">其他</option>
+                    </select>
+                    <div id="subMaterialCustomContainer" class="custom-input-container">
+                        <input type="text" id="subMaterialCustom" maxlength="4" placeholder="请输入其他子耗材类型(4字以内)">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -473,8 +579,15 @@
 
         // 写入面板的表单元素
         const manufacturerInput = document.getElementById('manufacturer');
-        const materialTypeInput = document.getElementById('materialType');
-        const subMaterialInput = document.getElementById('subMaterial');
+        const manufacturerSelect = document.getElementById('manufacturerSelect');
+        const manufacturerCustomContainer = document.getElementById('manufacturerCustomContainer');
+        const manufacturerCustom = document.getElementById('manufacturerCustom');
+        const materialTypeSelect = document.getElementById('materialTypeSelect');
+        const materialTypeCustomContainer = document.getElementById('materialTypeCustomContainer');
+        const materialTypeCustom = document.getElementById('materialTypeCustom');
+        const subMaterialSelect = document.getElementById('subMaterialSelect');
+        const subMaterialCustomContainer = document.getElementById('subMaterialCustomContainer');
+        const subMaterialCustom = document.getElementById('subMaterialCustom');
         const materialColorInput = document.getElementById('materialColor');
         const opacitySlider = document.getElementById('opacitySlider');
         const opacityValue = document.getElementById('opacityValue');
@@ -496,6 +609,35 @@
             statusBox.className = 'status ' + type; // 设置样式类
             statusBox.style.display = 'block';
             console.log(type.toUpperCase() + ': ' + message);
+        }
+
+        // 显示成功弹窗
+        function showSuccessPopup(title, message) {
+            // 移除已有的弹窗
+            const existingPopup = document.querySelector('.success-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+
+            // 创建弹窗
+            const popup = document.createElement('div');
+            popup.className = 'success-popup';
+            popup.innerHTML = `
+                <h4>${title}</h4>
+                <p>${message}</p>
+            `;
+
+            document.body.appendChild(popup);
+
+            // 5秒后自动移除
+            setTimeout(() => {
+                popup.classList.add('fade-out');
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.parentNode.removeChild(popup);
+                    }
+                }, 500);
+            }, 5000);
         }
 
         // 解析数据函数
@@ -641,17 +783,37 @@
             }
         }
 
+        // 获取厂商信息值
+        function getManufacturerValue() {
+            if (manufacturerSelect.value === 'OTHER') {
+                return manufacturerCustom.value.trim() || 'ERYONE';
+            }
+            return manufacturerSelect.value;
+        }
+
+        // 获取耗材类型值
+        function getMaterialTypeValue() {
+            if (materialTypeSelect.value === 'OTHER') {
+                return materialTypeCustom.value.trim() || 'PLA';
+            }
+            return materialTypeSelect.value;
+        }
+
+        // 获取子耗材值
+        function getSubMaterialValue() {
+            if (subMaterialSelect.value === 'OTHER') {
+                const customValue = subMaterialCustom.value.trim();
+                return customValue || '    ';
+            }
+            return subMaterialSelect.value;
+        }
+
         // 生成耗材数据格式
         function generateMaterialData() {
             // 获取表单值
-            const manufacturer = manufacturerInput.value.trim() || 'ERYONE';
-            const materialType = materialTypeInput.value.trim() || 'PLA';
-            let subMaterial = subMaterialInput.value.trim();
-
-            // 子耗材为空时使用4个空格
-            if (subMaterial === '') {
-                subMaterial = '    ';
-            }
+            const manufacturer = getManufacturerValue();
+            const materialType = getMaterialTypeValue();
+            let subMaterial = getSubMaterialValue();
 
             // 颜色处理：从#RRGGBB转换为RRGGBB
             let color = materialColorInput.value;
@@ -694,7 +856,9 @@
         function initEventListeners() {
             // 监听所有输入变化，实时更新生成的数据
             const inputs = [
-                manufacturerInput, materialTypeInput, subMaterialInput, materialColorInput,
+                manufacturerSelect, manufacturerCustom,
+                materialTypeSelect, materialTypeCustom,
+                subMaterialSelect, subMaterialCustom, materialColorInput,
                 opacitySlider, minTempInput, maxTempInput, bedTempInput,
                 diameterInput, weightInput, productionDateInput
             ];
@@ -703,11 +867,43 @@
                 input.addEventListener('input', updateGeneratedData);
             });
 
+            manufacturerSelect.addEventListener('change', function () {
+                if (this.value === 'OTHER') {
+                    manufacturerCustomContainer.classList.add('show');
+                    manufacturerCustom.focus();
+                } else {
+                    manufacturerCustomContainer.classList.remove('show');
+                }
+                updateGeneratedData();
+            });
+
             // 透明度滑块显示
             opacitySlider.addEventListener('input', function () {
                 const value = this.value;
                 const hexValue = Math.round(value * 255 / 100).toString(16).toUpperCase().padStart(2, '0');
                 opacityValue.textContent = `${value}% (${hexValue})`;
+                updateGeneratedData();
+            });
+
+            // 耗材类型下拉框变化
+            materialTypeSelect.addEventListener('change', function () {
+                if (this.value === 'OTHER') {
+                    materialTypeCustomContainer.classList.add('show');
+                    materialTypeCustom.focus();
+                } else {
+                    materialTypeCustomContainer.classList.remove('show');
+                }
+                updateGeneratedData();
+            });
+
+            // 子耗材下拉框变化
+            subMaterialSelect.addEventListener('change', function () {
+                if (this.value === 'OTHER') {
+                    subMaterialCustomContainer.classList.add('show');
+                    subMaterialCustom.focus();
+                } else {
+                    subMaterialCustomContainer.classList.remove('show');
+                }
                 updateGeneratedData();
             });
 
@@ -955,6 +1151,9 @@
 
                     readResult.textContent = resultText;
 
+                    // 显示读取成功弹窗
+                    showSuccessPopup('✅ 读取成功', 'NFC标签数据已成功读取！');
+
                     // 单次读取后自动停止
                     if (abortController) {
                         abortController.abort();
@@ -1040,8 +1239,12 @@
                         lang: "en"
                     }]
                 });
-                updateStatus(`✅ 耗材数据写入成功！`, 'success');
-                updateStatus(`写入内容: ${materialData}`, 'info');
+
+                // 显示写入成功弹窗
+                showSuccessPopup('✅ 写入成功', '耗材数据已成功写入NFC标签！');
+
+                // 在顶部状态栏显示详细信息（带换行）
+                updateStatus('✅ 耗材数据写入成功！\n写入内容: ' + materialData, 'success');
             } catch (error) {
                 updateStatus(`❌ 写入失败: ${error.message}`, 'error');
             }
