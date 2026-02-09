@@ -18,7 +18,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             padding: 20px;
@@ -195,6 +195,130 @@
             margin-bottom: 5px;
             color: #666;
         }
+
+        /* 新增：耗材信息表单样式 */
+        .material-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .color-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .color-picker-label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .opacity-slider-container {
+            flex: 1;
+        }
+
+        .opacity-slider {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .opacity-value {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .generated-data {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .generated-data h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        #generatedFormat {
+            font-family: monospace;
+            font-size: 16px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .material-form {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
     </style>
 </head>
 
@@ -248,10 +372,89 @@
 
         <!-- 写入面板 -->
         <div class="write-panel">
-            <h2>第三步：写入数据到标签</h2>
-            <p>输入你想要写入标签的文本（例如URL或普通文本）：</p>
-            <textarea id="dataToWrite" placeholder="请输入要写入的内容，例如：https://example.com 或 你好，NFC！"></textarea>
-            <button id="writeBtn" disabled>写入数据</button>
+            <h2>第三步：写入耗材数据到标签</h2>
+            <p>填写以下耗材信息，然后点击"生成并写入"按钮写入标签：</p>
+
+            <div class="material-form">
+                <!-- 第一行 -->
+                <div class="form-group">
+                    <label for="manufacturer">厂商信息 (10字以内):</label>
+                    <input type="text" id="manufacturer" maxlength="10" placeholder="例如: ERYONE">
+                </div>
+
+                <div class="form-group">
+                    <label for="materialType">耗材类型 (4字以内):</label>
+                    <input type="text" id="materialType" maxlength="4" placeholder="例如: PLA">
+                </div>
+
+                <!-- 第二行 -->
+                <div class="form-group">
+                    <label for="subMaterial">子耗材 (4字以内，可为空):</label>
+                    <input type="text" id="subMaterial" maxlength="4" placeholder="例如: 高韧">
+                </div>
+
+                <div class="form-group">
+                    <label>颜色与透明度:</label>
+                    <div class="color-section">
+                        <div class="color-picker-container">
+                            <div class="color-picker-label">颜色:</div>
+                            <input type="color" id="materialColor" value="#000000">
+                        </div>
+                        <div class="opacity-slider-container">
+                            <div class="color-picker-label">透明度:</div>
+                            <input type="range" id="opacitySlider" class="opacity-slider" min="0" max="100" value="100">
+                            <div class="opacity-value" id="opacityValue">100% (FF)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第三行：温度设置 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="minTemp">最低温度 (°C):</label>
+                        <input type="number" id="minTemp" min="0" max="300" value="190" placeholder="例如: 190">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxTemp">最高温度 (°C):</label>
+                        <input type="number" id="maxTemp" min="0" max="300" value="230" placeholder="例如: 230">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bedTemp">热床温度 (°C):</label>
+                        <input type="number" id="bedTemp" min="0" max="150" value="60" placeholder="例如: 60">
+                    </div>
+                </div>
+
+                <!-- 第四行：其他参数 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="diameter">直径 (mm):</label>
+                        <input type="number" id="diameter" min="0.1" max="5.0" step="0.1" value="1.75"
+                            placeholder="例如: 1.75">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weight">重量 (g):</label>
+                        <input type="number" id="weight" min="1" max="5000" value="1000" placeholder="例如: 1000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productionDate">生产日期 (YYMM):</label>
+                        <input type="text" id="productionDate" maxlength="4" pattern="\d{4}" placeholder="例如: 2602">
+                    </div>
+                </div>
+            </div>
+
+            <div class="generated-data">
+                <h4>生成的耗材数据格式:</h4>
+                <div id="generatedFormat" class="raw-data">;ERYONE;PLA; ;000000;FF;190;230;60;175;1000;2602;</div>
+                <p>格式说明: ;厂商;耗材类型;子耗材;颜色;透明度;最低温度;最高温度;热床温度;直径;重量;生产日期;</p>
+                <p>注意: 子耗材为空时使用4个空格，颜色为6位十六进制(无#)，透明度为2位十六进制(FF=100%)，直径为实际值×100(1.75→175)</p>
+            </div>
+
+            <button id="writeBtn" disabled>生成并写入</button>
+            <button id="generateBtn">仅生成数据</button>
         </div>
     </div>
 
@@ -265,10 +468,25 @@
         const statusBox = document.getElementById('statusBox');
         const statusMessage = document.getElementById('statusMessage');
         const readResult = document.getElementById('readResult');
-        const dataToWrite = document.getElementById('dataToWrite');
         const parseResult = document.getElementById('parseResult');
         const dataTable = document.getElementById('dataTable');
         const rawDataText = document.getElementById('rawDataText');
+        const generatedFormat = document.getElementById('generatedFormat');
+
+        // 写入面板的表单元素
+        const manufacturerInput = document.getElementById('manufacturer');
+        const materialTypeInput = document.getElementById('materialType');
+        const subMaterialInput = document.getElementById('subMaterial');
+        const materialColorInput = document.getElementById('materialColor');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityValue = document.getElementById('opacityValue');
+        const minTempInput = document.getElementById('minTemp');
+        const maxTempInput = document.getElementById('maxTemp');
+        const bedTempInput = document.getElementById('bedTemp');
+        const diameterInput = document.getElementById('diameter');
+        const weightInput = document.getElementById('weight');
+        const productionDateInput = document.getElementById('productionDate');
+        const generateBtn = document.getElementById('generateBtn');
 
         // 全局变量，用于控制读取过程
         let isReading = false;
@@ -289,7 +507,7 @@
             dataTable.innerHTML = '';
             rawDataText.textContent = '';
 
-            // 检查是否符合解析条件：以"en;"开头，以";"结尾
+            // 检查是否符合解析条件：以";"开头，以";"结尾
             if (text.startsWith(';') && text.endsWith(';')) {
                 console.log('符合解析条件，开始解析数据');
 
@@ -302,7 +520,7 @@
                 // 分割数据
                 const parts = text.split(';');
 
-                // 移除第一个(en)和最后一个(空)元素
+                // 移除第一个和最后一个(空)元素
                 const dataParts = parts.slice(1, -1);
 
                 // 定义字段名称
@@ -385,6 +603,19 @@
                                 <td>${fieldValue}°C</td>
                             </tr>
                         `;
+                    } else if (fieldName === '直径(mm)') {
+                        // 直径字段处理
+                        let diameterText = fieldValue;
+                        if (/^\d+$/.test(fieldValue)) {
+                            const diameter = parseInt(fieldValue) / 100;
+                            diameterText = `${diameter}mm (${fieldValue}/100)`;
+                        }
+                        tableHTML += `
+                            <tr>
+                                <th>${fieldName}</th>
+                                <td>${diameterText}</td>
+                            </tr>
+                        `;
                     } else {
                         // 普通字段
                         tableHTML += `
@@ -409,6 +640,92 @@
                     success: false,
                     message: '数据格式不符合解析条件'
                 };
+            }
+        }
+
+        // 生成耗材数据格式
+        function generateMaterialData() {
+            // 获取表单值
+            const manufacturer = manufacturerInput.value.trim() || 'ERYONE';
+            const materialType = materialTypeInput.value.trim() || 'PLA';
+            let subMaterial = subMaterialInput.value.trim();
+
+            // 子耗材为空时使用4个空格
+            if (subMaterial === '') {
+                subMaterial = '    ';
+            }
+
+            // 颜色处理：从#RRGGBB转换为RRGGBB
+            let color = materialColorInput.value;
+            if (color.startsWith('#')) {
+                color = color.substring(1).toUpperCase();
+            }
+
+            // 透明度处理：0-100转换为两位十六进制
+            const opacityPercent = parseInt(opacitySlider.value);
+            const opacityHex = Math.round(opacityPercent * 255 / 100).toString(16).toUpperCase().padStart(2, '0');
+
+            // 温度处理
+            const minTemp = minTempInput.value || '190';
+            const maxTemp = maxTempInput.value || '230';
+            const bedTemp = bedTempInput.value || '60';
+
+            // 直径处理：1.75 -> 175
+            const diameter = diameterInput.value || '1.75';
+            const diameterInt = Math.round(parseFloat(diameter) * 100);
+
+            // 重量处理
+            const weight = weightInput.value || '1000';
+
+            // 生产日期处理
+            const productionDate = productionDateInput.value || '2602';
+
+            // 生成格式字符串
+            const materialData = `;${manufacturer};${materialType};${subMaterial};${color};${opacityHex};${minTemp};${maxTemp};${bedTemp};${diameterInt};${weight};${productionDate};`;
+
+            return materialData;
+        }
+
+        // 更新生成的数据显示
+        function updateGeneratedData() {
+            const materialData = generateMaterialData();
+            generatedFormat.textContent = materialData;
+        }
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 监听所有输入变化，实时更新生成的数据
+            const inputs = [
+                manufacturerInput, materialTypeInput, subMaterialInput, materialColorInput,
+                opacitySlider, minTempInput, maxTempInput, bedTempInput,
+                diameterInput, weightInput, productionDateInput
+            ];
+
+            inputs.forEach(input => {
+                input.addEventListener('input', updateGeneratedData);
+            });
+
+            // 透明度滑块显示
+            opacitySlider.addEventListener('input', function () {
+                const value = this.value;
+                const hexValue = Math.round(value * 255 / 100).toString(16).toUpperCase().padStart(2, '0');
+                opacityValue.textContent = `${value}% (${hexValue})`;
+                updateGeneratedData();
+            });
+
+            // 仅生成数据按钮
+            generateBtn.addEventListener('click', function () {
+                updateGeneratedData();
+                updateStatus('数据已生成，可复制使用或写入标签。', 'info');
+            });
+
+            // 设置生产日期默认值为当前年月
+            const now = new Date();
+            const currentYear = now.getFullYear().toString().substring(2);
+            const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+            if (!productionDateInput.value) {
+                productionDateInput.value = currentYear + currentMonth;
+                updateGeneratedData();
             }
         }
 
@@ -451,7 +768,6 @@
                 detailedLog += '\n2. 建议：\n';
                 detailedLog += '   a) 确保使用Android Chrome/Edge最新版\n';
                 detailedLog += '   b) 在chrome://flags中搜索并启用"WebNFC"\n';
-                detailedLog += '   c) 您之前在webnfc.org能用的原因可能是该网站使用了polyfill或不同的API调用方式\n';
                 updateStatus('❌ 未找到NFC API对象', 'error');
                 readResult.textContent = detailedLog;
                 return;
@@ -707,42 +1023,36 @@
 
         // 4. 写入数据到标签
         writeBtn.addEventListener('click', async () => {
-            const textToWrite = dataToWrite.value.trim();
-            if (!textToWrite) {
-                updateStatus('❌ 请输入要写入的内容。', 'error');
+            const materialData = generateMaterialData();
+
+            if (!materialData) {
+                updateStatus('❌ 请先填写完整的耗材信息。', 'error');
                 return;
             }
 
             updateStatus('请将要写入的标签贴近手机背面...', 'info');
 
-            // 判断输入内容是否为URL（简单判断）
-            let record;
-            const urlPattern = /^https?:\/\/.+/i;
-            if (urlPattern.test(textToWrite)) {
-                // 创建URL记录
-                record = {
-                    recordType: "url",
-                    data: textToWrite
-                };
-            } else {
-                // 创建文本记录，默认语言为中文（'en'）
-                record = {
-                    recordType: "text",
-                    data: textToWrite,
-                    lang: "en"
-                };
-            }
-
             try {
                 // 调用写入API
                 const ndefWriter = new NDEFReader();
-                await ndefWriter.write({ records: [record] });
-                updateStatus(`✅ 数据写入成功！`, 'success');
-                // 写入成功后，清空输入框
-                dataToWrite.value = '';
+                await ndefWriter.write({
+                    records: [{
+                        recordType: "text",
+                        data: materialData,
+                        lang: "en"
+                    }]
+                });
+                updateStatus(`✅ 耗材数据写入成功！`, 'success');
+                updateStatus(`写入内容: ${materialData}`, 'info');
             } catch (error) {
                 updateStatus(`❌ 写入失败: ${error.message}`, 'error');
             }
+        });
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function () {
+            initEventListeners();
+            updateGeneratedData(); // 初始生成一次数据
         });
     </script>
 </body>
