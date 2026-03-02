@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>耗材RFID读写</title>
+    <title>耗材信息RFID读写</title>
     <style>
         * {
             box-sizing: border-box;
@@ -397,7 +397,7 @@
 
 <body>
     <div class="container">
-        <h1>📱 手机耗材NFC读写工具</h1>
+        <h1>📱 手机耗材信息NFC读写工具</h1>
 
         <div class="warning">
             <strong>重要提示：</strong>
@@ -405,7 +405,7 @@
                 <li>本工具仅能在 <strong>Android 版 Chrome 浏览器</strong> 中使用。</li>
                 <li>请确保手机NFC功能已打开。</li>
                 <li>将标签贴近手机NFC感应区。</li>
-                <li><strong>iPhone (iOS) 系统不支持此功能。</strong></li>
+                <li><strong>iPhone (iOS) 系统不支持此功能，请自行下载 “NFC Tools” APP。</strong></li>
             </ul>
         </div>
 
@@ -486,7 +486,7 @@
                 <div class="form-group">
                     <label for="subMaterialSelect">子耗材:</label>
                     <select id="subMaterialSelect">
-                        <option value="    ">无</option>
+                        <option value="">无</option>
                         <option value="CF">碳纤维 (CF)</option>
                         <option value="GF">玻璃纤维 (GF)</option>
                         <option value="HS">高速 (HS)</option>
@@ -552,9 +552,11 @@
             </div>
 
             <div class="generated-data">
-                <h4>生成的耗材数据格式:</h4>
-                <div id="generatedFormat" class="raw-data">;ERYONE;PLA; ;000000;FF;190;230;60;175;1000;2602;</div>
-                <p>格式说明: ;厂商;耗材类型;子耗材;颜色;透明度;最低温度;最高温度;热床温度;直径;重量;生产日期;</p>
+                <h4>生成的写入数据格式(若有https://请自行删除):</h4>
+                <div id="generatedFormat" class="raw-data">
+                    https://eryoneoffical.github.io/RFID_Web/?data=en~ERYONE-PLA--000000-FF-190-230-60-175-1000-2602~
+                </div>
+                <p>格式说明(data后的数据): ~厂商-耗材类型-子耗材-颜色-透明度-最低温度-最高温度-热床温度-直径-重量-生产日期~</p>
             </div>
 
             <button id="writeBtn" disabled>生成并写入</button>
@@ -648,7 +650,7 @@
             rawDataText.textContent = '';
 
             // 检查是否符合解析条件：以";"开头，以";"结尾
-            if (text.startsWith(';') && text.endsWith(';')) {
+            if (text.startsWith('en~') && text.endsWith('~')) {
                 console.log('符合解析条件，开始解析数据');
 
                 // 显示解析结果区域
@@ -657,11 +659,9 @@
                 // 保存原始数据
                 rawDataText.textContent = text;
 
-                // 分割数据
-                const parts = text.split(';');
-
-                // 移除第一个和最后一个(空)元素
-                const dataParts = parts.slice(1, -1);
+                // 去掉前缀 "en{" 和后缀 "}"
+                const content = text.slice(3, -1); // 从索引3到倒数第一个字符
+                const parts = content.split('-');
 
                 // 定义字段名称
                 const fieldNames = [
@@ -681,12 +681,12 @@
                 // 构建表格
                 let tableHTML = '';
 
-                for (let i = 0; i < fieldNames.length && i < dataParts.length; i++) {
+                for (let i = 0; i < fieldNames.length && i < parts.length; i++) {
                     const fieldName = fieldNames[i];
-                    let fieldValue = dataParts[i];
+                    let fieldValue = parts[i];
 
                     // 特殊处理某些字段
-                    if (fieldName === '子耗材' && fieldValue.trim() === '') {
+                    if (fieldName === '子耗材' && fieldValue === '') {
                         fieldValue = '无';
                     }
 
@@ -713,7 +713,8 @@
                         let opacityText = fieldValue;
                         if (/^[0-9A-Fa-f]{2}$/.test(fieldValue)) {
                             const opacityDecimal = parseInt(fieldValue, 16);
-                            opacityText = `${fieldValue} (${opacityDecimal}%)`;
+                            const opacityPercent = Math.round(opacityDecimal * 100 / 255);
+                            opacityText = `${fieldValue} (${opacityPercent}%)`;
                         }
                         tableHTML += `
                             <tr>
@@ -771,7 +772,7 @@
 
                 return {
                     success: true,
-                    fields: dataParts,
+                    fields: parts,
                     fieldNames: fieldNames
                 };
             } else {
@@ -803,7 +804,7 @@
         function getSubMaterialValue() {
             if (subMaterialSelect.value === 'OTHER') {
                 const customValue = subMaterialCustom.value.trim();
-                return customValue || '    ';
+                return customValue || '';
             }
             return subMaterialSelect.value;
         }
@@ -841,7 +842,7 @@
             const productionDate = productionDateInput.value || '2602';
 
             // 生成格式字符串
-            const materialData = `;${manufacturer};${materialType};${subMaterial};${color};${opacityHex};${minTemp};${maxTemp};${bedTemp};${diameterInt};${weight};${productionDate};`;
+            const materialData = `https://eryoneoffical.github.io/RFID_Web/?data=en~${manufacturer}-${materialType}-${subMaterial}-${color}-${opacityHex}-${minTemp}-${maxTemp}-${bedTemp}-${diameterInt}-${weight}-${productionDate}~`;
 
             return materialData;
         }
@@ -850,6 +851,12 @@
         function updateGeneratedData() {
             const materialData = generateMaterialData();
             generatedFormat.textContent = materialData;
+        }
+
+        // 获取 URL 参数
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
         }
 
         // 初始化事件监听器
@@ -1137,6 +1144,16 @@
                             } else if (record.recordType === 'url') {
                                 const url = textDecoder.decode(record.data);
                                 resultText += `  URL: ${url}\n`;
+                                try {
+                                    const urlObj = new URL(url);
+                                    const dataParam = urlObj.searchParams.get('data');
+                                    if (dataParam) {
+                                        resultText += `  从URL参数中提取数据: ${dataParam}\n`;
+                                        parseData(dataParam); // 这会自动更新下方的解析表格
+                                    }
+                                } catch (e) {
+                                    // URL解析失败，忽略
+                                }
                             } else if (record.recordType === 'mime' && record.mediaType) {
                                 resultText += `  MIME类型: ${record.mediaType}\n`;
                                 resultText += `  数据大小: ${record.data.byteLength} 字节\n`;
@@ -1234,9 +1251,9 @@
                 const ndefWriter = new NDEFReader();
                 await ndefWriter.write({
                     records: [{
-                        recordType: "text",
+                        recordType: "url",
                         data: materialData,
-                        lang: "en"
+                        // lang: "en"
                     }]
                 });
 
@@ -1254,8 +1271,31 @@
         document.addEventListener('DOMContentLoaded', function () {
             initEventListeners();
             updateGeneratedData(); // 初始生成一次数据
+
+            // 检查 URL 参数中是否包含耗材数据
+            const dataParam = getQueryParam('data');
+            if (dataParam && readResult && parseResult) {
+                try {
+                    const decodedData = decodeURIComponent(dataParam);
+                    // 显示原始数据
+                    readResult.textContent = `从链接加载的数据：\n${decodedData}`;
+                    // 调用解析函数
+                    const parseResultObj = parseData(decodedData);
+                    if (parseResultObj && parseResultObj.success) {
+                        updateStatus('✅ 从链接成功加载耗材数据', 'success');
+                        // 可选：禁用 NFC 读写按钮，避免混淆
+                        parseResult.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        updateStatus('⚠️ 链接中的数据格式不正确', 'error');
+                    }
+                } catch (e) {
+                    console.error('解析参数时出错：', e);
+                    updateStatus('❌ URL 参数解码失败', 'error');
+                }
+            }
         });
     </script>
 </body>
+
 
 </html>
